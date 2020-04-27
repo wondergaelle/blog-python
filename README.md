@@ -15,7 +15,7 @@ set FLASK_ENV=development
 flask run
 
 # base de données 
-from hello import db
+from index import db
 db.create_all()
 
 pip
