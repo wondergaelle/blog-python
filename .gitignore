@@ -1,1 +1,4 @@
 variables.py
+venv/
+data.db
+__pycache__

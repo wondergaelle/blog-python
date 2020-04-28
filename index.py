@@ -17,6 +17,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 # Création de l'instance de notre base de données
 db = SQLAlchemy(app)
 
+from post import Post
+from user import User
+
 # Récupération du chemin du fichier de la base de données
 dbPath = os.path.join(app.root_path, 'data.db')
 # Si le fichier n'existe pas
