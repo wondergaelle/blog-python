@@ -15,10 +15,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import abort
 # Import de la lib requests pour exécuter des requêtes HTTP(S)
 import requests
+# import de la variable secret pour crypter les sessions
+from variables import session_secret
+# Import de la variable de session de Flask
+from flask import session
 
 
 # Création de notre application Flask
 app = Flask(__name__)
+# On donne un tableau de bytes aléatoire pour crypter nos sessions
+app.secret_key = session_secret
 # Specification du chemin de notre fichier de Base de données
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 # Création de l'instance de notre base de données
@@ -55,6 +61,58 @@ def display_posts():
     # Conversion du template "posts.html" en lui injectant notre tableau de posts récupérés de la BDD
     return render_template('posts.html', posts=allPosts)
 
+
+@app.route('/users/create', methods=['POST', 'GET'])
+def create_user():
+    # Si la méthode est de type "GET"
+    if request.method == 'GET':
+        # On affiche notre formulaire de création
+        return render_template('create_user.html')
+    else:
+        # Sinon, notre méthode HTTP est POST
+        # on va donc créer un nouvel utilisateur
+        # récupération du nom de l'utilisateur depuis le corps de la requête
+        name = request.form['name']
+        # récupération de l'email depuis le corps de la requête
+        email = request.form['email']
+        # récupération du mot de passe depuis le corps de la requête
+        password = request.form['password']
+        # Création d'un utilisateur à l'aide du constructeur généré par SQLAlchemy 
+        user = User(name=name, email=email, password=password)
+        # Insertion de notre utilisateur dans session de base de données
+        # Attention, celui-ci n'est pas encore présent dans la base de données
+        db.session.add(user)
+        # Sauvegarde de notre session dans la base de données
+        db.session.commit()
+        # Redirection vers la liste de nos tweets
+        return redirect(url_for('display_users'))
+
+# Association de la route "/users/<identifiant d'un utilisateur/edit" à notre fonction edit_user()
+# Celle ci accepte 2 méthode HTTP : GET & POST
+@app.route('/users/<int:user_id>/edit', methods=['POST', 'GET'])
+def edit_user(user_id):
+    # On récupère l'utilisateur que l'on veut éditer dans notre base de données
+    user = User.query.filter_by(id=user_id).first()
+    # Si on ne trouve pas l'utilisateur
+    if user == None:
+        # On émet une erreur 404 Not Found
+        abort(404)
+    #Si notre méthode HTTP est GET
+    if request.method == 'GET':
+        # On affiche notre formulaire d'édition prérempli avec notre utilisateur
+        return render_template('edit_user.html', user=user)
+    else:
+        # Sinon nous avons une méthode HTTP POST, nous modifions donc notre utilisateur.
+        # modification du nom de l'utilisateur depuis le corps de la requête
+        user.name = request.form['name']
+        # modification de l'email depuis le corps de la requête
+        user.email = request.form['email']
+        # Sauvegarde de notre session dans la base de données
+        db.session.commit()
+        # redirection vers l'affichage de nos utilisateurs.
+        return redirect(url_for('display_users'))
+
+
 # Association de la route "/users" à notre fonction display_users()
 @app.route('/users')
 def display_users():
@@ -78,3 +136,34 @@ def display_author_posts(user_id):
     # Réutilisation du template "posts.html" en y injectant notre tableau 
     # qui contient les posts d'un auteur
     return render_template('posts.html', posts=authorPosts)
+
+
+# Association de la route "/login" à notre fonction login()
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # Si on est dans une requête GET
+    if request.method == 'GET':
+        # On affiche simplement le formulaire de Login
+        return render_template('login.html')
+    else:
+        # Sinon cela veut dire qu'on est dans une méthode POST
+        # On récupère l'utilisateur avec son email
+        user = User.query.filter_by(email=request.form['email']).first()
+        # Si notre utilisteur existe et 
+        # Si le mot de passe présent dans le formulaire est le même que celui de la base de données
+        if user != None and user.password == request.form['password'] :
+            # On a réussi notre login, on inscrit donc le l'identifiant de l'utilisateur dans la variable de session
+            session['user_id'] = user.id
+            # on redirige l'utilisateur vers la liste des posts
+            return redirect(url_for('display_posts'))
+        else:
+            # Si l'utilisateur n'existe pas ou que les mots de passes ne correspondent pas
+            # on renvoie l'utilisateur vers le formulaire de login.
+            return render_template('login.html', error="Email et/ou mot de passe incorrect")
+
+# Association de la route "/logout" à notre fonction logout()
+@app.route('/logout')
+def logout():
+    # Pour déconnecter l'utilisateur on enlève user_id de la variable session
+    session.pop('user_id', None)
+    return redirect(url_for('display_posts'))
