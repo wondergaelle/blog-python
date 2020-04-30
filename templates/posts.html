@@ -29,7 +29,8 @@
                         </div>
                         <div class="card-body">
                             <blockquote class="blockquote mb-0">
-                                <p> {{ post.content }}</p>
+                                <p class="card-text"> {{ post.resume }}</p>
+                                <p class="card-text"> {{ post.content }}</p>
                                 <footer class="blockquote-footer">{% if post.date %}Date: {{ post.date.strftime("%d/%m/%Y, %H:%M:%S") }} - {% endif %}<a href="/posts/{{ post.id }}/edit">Modifier</a></footer>
                             </blockquote>
                         </div>

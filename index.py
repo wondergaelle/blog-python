@@ -108,10 +108,12 @@ def display_create_post():
         user_id = session['user_id']
         # récupération du titre depuis le corps de la requête
         titre = request.form['titre']
+        # récupération du titre depuis le corps de la requête
+        resume = request.form['resume']
         # récupération du contenu depuis le corps de la requête
         content = request.form['content']
         # Création d'un post à l'aide du constructeur généré par SQLAlchemy 
-        post = Post(user_id=user_id, titre=titre, content=content)
+        post = Post(user_id=user_id, titre=titre, resume=resume, content=content)
         # Insertion de notre post dans session de base de données
         # Attention, celui-ci n'est pas encore présent dans la base de données
         db.session.add(post)
@@ -143,6 +145,8 @@ def edit_post(post_id):
         post.user_id = request.form['user_id']
         # modification du contenu depuis le corps de la requête
         post.titre = request.form['titre']
+        # modification du contenu depuis le corps de la requête
+        post.resume = request.form['resume']
         # modification du contenu depuis le corps de la requête
         post.content = request.form['content']
         # Sauvegarde de notre session dans la base de données
