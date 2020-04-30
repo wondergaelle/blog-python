@@ -87,6 +87,67 @@ def create_user():
         # Redirection vers la liste de nos tweets
         return redirect(url_for('display_users'))
 
+# Association de la route "/posts/create" à notre fonction display_create_post()
+# Celle ci accepte 2 méthode HTTP : GET & POST
+@app.route('/posts/create', methods=['POST', 'GET'])
+def display_create_post():
+    # On autorise la création de post qu'aux utilisateurs enregistrés
+    # Si user_id n'est pas dans notre variable session
+    if not 'user_id' in session :
+        # on redirige vers la page de login
+        return redirect(url_for('login'))
+    # Si la méthode est de type "GET"
+    if request.method == 'GET':
+        #Récupération de la liste des utilisateurs pour la relation post<->user
+        users = User.query.all()
+        # On affiche notre formulaire de création en lui donnant la liste des utilisateurs
+        return render_template('create_post.html', users=users)
+    else:
+        # Sinon, notre méthode HTTP est POST
+        # on va donc créer un nouveau post
+        # récupération de l'identifiant de l'utilisateur depuis la variable de session
+        user_id = session['user_id']
+        # récupération du contenu depuis le corps de la requête
+        content = request.form['content']
+        # Création d'un post à l'aide du constructeur généré par SQLAlchemy 
+        post = Post(user_id=user_id, content=content)
+        # Insertion de notre post dans session de base de données
+        # Attention, celui-ci n'est pas encore présent dans la base de données
+        db.session.add(post)
+        # Sauvegarde de notre session dans la base de données
+        db.session.commit()
+        # Redirection vers la liste de nos tweets
+        return redirect(url_for('display_posts'))
+
+# Association de la route "/posts/<identifiant d'un post/edit" à notre fonction edit_post()
+# Celle ci accepte 2 méthode HTTP : GET & POST
+@app.route('/posts/<int:post_id>/edit', methods=['POST', 'GET'])
+def edit_post(post_id):
+    # On récupère le post que l'on veut éditer dans notre base de données
+    post = Post.query.filter_by(id=post_id).first()
+    # Si on ne trouve pas le post
+    if post == None:
+        # On émet une erreur 404 Not Found
+        abort(404)
+    #Si notre méthode HTTP est GET
+    if request.method == 'GET':
+        # récupération de nos utilisateurs depuis la base de données
+        users = User.query.all()
+        # On affiche notre formulaire d'édition prérempli avec notre post
+        # On donne également la liste des utilisateurs pour les afficher dans le select
+        return render_template('edit_post.html', post=post, users=users)
+    else:
+        # Sinon nous avons une méthode HTTP POST, nous modifions donc notre tweet.
+        # modification de l'auteur avec son identifiant depuis le corps de la requête
+        post.user_id = request.form['user_id']
+        # modification du contenu depuis le corps de la requête
+        post.content = request.form['content']
+        # Sauvegarde de notre session dans la base de données
+        db.session.commit()
+        # redirection vers l'affichage de nos tweets.
+        return redirect(url_for('display_posts'))
+
+
 # Association de la route "/users/<identifiant d'un utilisateur/edit" à notre fonction edit_user()
 # Celle ci accepte 2 méthode HTTP : GET & POST
 @app.route('/users/<int:user_id>/edit', methods=['POST', 'GET'])
@@ -136,6 +197,7 @@ def display_author_posts(user_id):
     # Réutilisation du template "posts.html" en y injectant notre tableau 
     # qui contient les posts d'un auteur
     return render_template('posts.html', posts=authorPosts)
+
 
 
 # Association de la route "/login" à notre fonction login()
