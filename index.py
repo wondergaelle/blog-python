@@ -47,14 +47,13 @@ posts = []
 
 
 # Association de la route "/" à notre fonction hello_world()
-@app.route('/')
-def hello_world():
-    # On renvoi à notre navigateur du texte
-    return 'Hello, World!'
+#@app.route('/')
+#def hello_world():
+    #return redirect(url_for('display_posts'))
 
 
 # Association de la route "/post" à notre fonction display_posts()
-@app.route('/posts')
+@app.route('/')
 def display_posts():
     # récupération des posts de la BDD.
     allPosts = Post.query.all()
@@ -107,10 +106,12 @@ def display_create_post():
         # on va donc créer un nouveau post
         # récupération de l'identifiant de l'utilisateur depuis la variable de session
         user_id = session['user_id']
+        # récupération du titre depuis le corps de la requête
+        titre = request.form['titre']
         # récupération du contenu depuis le corps de la requête
         content = request.form['content']
         # Création d'un post à l'aide du constructeur généré par SQLAlchemy 
-        post = Post(user_id=user_id, content=content)
+        post = Post(user_id=user_id, titre=titre, content=content)
         # Insertion de notre post dans session de base de données
         # Attention, celui-ci n'est pas encore présent dans la base de données
         db.session.add(post)
@@ -140,6 +141,8 @@ def edit_post(post_id):
         # Sinon nous avons une méthode HTTP POST, nous modifions donc notre tweet.
         # modification de l'auteur avec son identifiant depuis le corps de la requête
         post.user_id = request.form['user_id']
+        # modification du contenu depuis le corps de la requête
+        post.titre = request.form['titre']
         # modification du contenu depuis le corps de la requête
         post.content = request.form['content']
         # Sauvegarde de notre session dans la base de données
@@ -197,8 +200,6 @@ def display_author_posts(user_id):
     # Réutilisation du template "posts.html" en y injectant notre tableau 
     # qui contient les posts d'un auteur
     return render_template('posts.html', posts=authorPosts)
-
-
 
 # Association de la route "/login" à notre fonction login()
 @app.route('/login', methods=['GET', 'POST'])
